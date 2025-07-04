@@ -1,12 +1,15 @@
 {
-  "name": "app",
+  "name": "overwatch",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "npm run tauri:clean && tauri build && node scripts/copy-dist.js",
+    "tauri:clean": "rimraf .next out dist src-tauri/target"
   },
   "dependencies": {
     "next": "15.3.5",
@@ -19,6 +22,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
