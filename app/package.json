@@ -12,6 +12,8 @@
     "tauri:clean": "rimraf .next out dist src-tauri/target"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@tauri-apps/api": "^2.6.0",
     "next": "15.3.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
