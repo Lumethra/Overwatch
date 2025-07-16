@@ -8,15 +8,27 @@ interface CpuInfo {
     brand: string;
     frequency: number;
     cores: number;
+    logical_cores: number;
     usage: number;
     per_core_usage: number[];
+    temperature: number;
+    temp_available: boolean;
+    vendor: string;
+    architecture: string;
+    max_frequency: number;
+    cache_l1: string;
+    cache_l2: string;
+    cache_l3: string;
+    socket: string;
+    process_node: string;
+    uptime: string;
 }
 
 export default function CpuCard() {
     const [processorInfo, setProcessorInfo] = useState<CpuInfo | null>(null);
     const [isLoadingCpuInfo, setIsLoadingCpuInfo] = useState(true);
     const [showDetailedCoreInfo, setShowDetailedCoreInfo] = useState(false);
-    const refreshRate = 1000; // Don't hardcode this
+    const refreshRate = 1000;
 
     useEffect(() => {
         const getProcessorData = async () => {
@@ -24,28 +36,40 @@ export default function CpuCard() {
                 const cpuData = await invoke<CpuInfo>('get_cpu_info');
                 setProcessorInfo(cpuData);
             } catch (err) {
-                console.error('Hmm, something went wrong getting CPU info:', err);
                 setProcessorInfo(null);
             }
             setIsLoadingCpuInfo(false);
-        }; // first get, then refresh and then refresh and then refresh and then refresh and ... I am exhausted
+        };
+
         getProcessorData();
-        const refreshInterval = setInterval(getProcessorData, refreshRate); // Upfate, this is actually refreshing it, not the thing above
+        const refreshInterval = setInterval(getProcessorData, refreshRate);
 
         return () => clearInterval(refreshInterval);
     }, []);
-
-    // Fancy color thing (from the AI version, pls don't blame, devs don't like color and don't like light, but users do)
     const getWorkloadColor = (usage: number) => {
-        if (usage > 80) return '#ef4444'; // Red symbolyzes, that the CPU might be dying, like me rn
-        if (usage > 60) return '#f59e0b'; // Orange for the pain
-        return '#10b981'; // Green when things are chill
+        if (usage > 80) return '#ef4444';
+        if (usage > 60) return '#f59e0b';
+        return '#10b981';
     };
 
     const getWorkloadTextColor = (usage: number) => {
-        if (usage > 80) return 'text-red-500'; // It's actually the same here
-        if (usage > 60) return 'text-orange-500'; // Who would guessed, here too
-        return 'text-green-500'; // and this too
+        if (usage > 80) return 'text-red-500';
+        if (usage > 60) return 'text-orange-500';
+        return 'text-green-500';
+    };
+
+    const getTempColor = (temp: number) => {
+        if (temp > 80) return '#ef4444';
+        if (temp > 70) return '#f59e0b';
+        if (temp > 60) return '#eab308';
+        return '#10b981';
+    };
+
+    const getTempTextColor = (temp: number) => {
+        if (temp > 80) return 'text-red-500';
+        if (temp > 70) return 'text-orange-500';
+        if (temp > 60) return 'text-yellow-500';
+        return 'text-green-500';
     };
 
     if (isLoadingCpuInfo) {
@@ -71,7 +95,7 @@ export default function CpuCard() {
                     <CpuChipIcon className="w-8 h-8 text-red-500 mr-3" />
                     <h2 className="text-xl font-bold text-red-600">CPU Information</h2>
                 </div>
-                <p className="text-gray-600 dark:text-gray-400">Couldn't load processor information</p>
+                <p className="text-gray-600 dark:text-gray-400">Failed to load processor information</p>
             </div>
         );
     }
@@ -106,14 +130,28 @@ export default function CpuCard() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-4 gap-3 mb-4">
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Cores</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{processorInfo.cores}</p>
                 </div>
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Threads</p>
+                    <p className="text-lg font-bold text-gray-900 dark:text-white">{processorInfo.logical_cores}</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Frequency</p>
                     <p className="text-lg font-bold text-gray-900 dark:text-white">{processorInfo.frequency} MHz</p>
+                </div>
+                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Temperature</p>
+                    {processorInfo.temp_available ? (
+                        <p className={`text-lg font-bold ${getTempTextColor(processorInfo.temperature)}`}>
+                            {processorInfo.temperature.toFixed(0)}°C
+                        </p>
+                    ) : (
+                        <p className="text-lg font-bold text-gray-500 dark:text-gray-400">N/A</p>
+                    )}
                 </div>
             </div>
 
@@ -138,8 +176,56 @@ export default function CpuCard() {
                         <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.brand}</p>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">Vendor</label>
+                            <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.vendor}</p>
+                        </div>
+                        <div>
+                            <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">Architecture</label>
+                            <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.architecture}</p>
+                        </div>
+                    </div>
+
+                    {processorInfo.max_frequency > 0 && processorInfo.max_frequency !== processorInfo.frequency && (
+                        <div>
+                            <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">Max Boost Frequency</label>
+                            <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.max_frequency} MHz</p>
+                        </div>
+                    )}
+
+                    {(processorInfo.cache_l1 !== "Unknown" || processorInfo.cache_l2 !== "Unknown" || processorInfo.cache_l3 !== "Unknown") && (
+                        <div className="grid grid-cols-3 gap-4">
+                            {processorInfo.cache_l1 !== "Unknown" && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">L1 Cache</label>
+                                    <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.cache_l1}</p>
+                                </div>
+                            )}
+                            {processorInfo.cache_l2 !== "Unknown" && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">L2 Cache</label>
+                                    <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.cache_l2}</p>
+                                </div>
+                            )}
+                            {processorInfo.cache_l3 !== "Unknown" && (
+                                <div>
+                                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">L3 Cache</label>
+                                    <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.cache_l3}</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {processorInfo.socket !== "Unknown" && (
+                        <div>
+                            <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1">Socket</label>
+                            <p className="text-sm text-gray-900 dark:text-white font-mono bg-gray-50 dark:bg-gray-700 p-2 rounded">{processorInfo.socket}</p>
+                        </div>
+                    )}
+
                     <div>
-                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-3">Individual Core Usage</label>
+                        <label className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-3">Individual Thread Usage ({processorInfo.logical_cores} threads)</label>
                         <div className="grid grid-cols-1 gap-2">
                             {processorInfo.per_core_usage.map((coreUsage: number, coreIndex: number) => {
                                 const currentCoreLoad = Math.min(coreUsage, 100);
@@ -148,7 +234,7 @@ export default function CpuCard() {
 
                                 return (
                                     <div key={coreIndex} className="flex items-center space-x-3">
-                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-14">Core {coreIndex + 1}</span>
+                                        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 w-14">Thread {coreIndex + 1}</span>
                                         <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                                             <div
                                                 className="h-2 rounded-full transition-all duration-500 ease-in-out"

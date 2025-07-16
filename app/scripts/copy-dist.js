@@ -27,9 +27,12 @@ if (fs.existsSync(bundleDir)) {
     });
 }
 
+// Create portable folder and copy the executable there
 const exePath = 'src-tauri/target/release/app.exe';
 if (fs.existsSync(exePath)) {
-    fs.copyFileSync(exePath, path.join('dist', portableFilename));
+    const portableDir = path.join('dist', 'portable');
+    fs.mkdirSync(portableDir, { recursive: true });
+    fs.copyFileSync(exePath, path.join(portableDir, portableFilename));
 }
 
 console.log('Build artifacts copied successfully!');
